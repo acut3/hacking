@@ -1,0 +1,50 @@
+Compile without stack canaries
+$ gcc -fstack-protector-explicit ...
+
+Link with an executable stack (-z can be applied to gcc)
+$ ld -zexecstack ...
+
+Scan binary for exploitable ROP gadgets:
+$ ROPgadget --binary <binary>
+
+Allow gdb to attach to running proceses:
+$ echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+
+Disable ASRL
+$ echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+
+Run one binary with ASRL disabled
+$ setarch -R <program> [args]
+
+
+Tools
+=====
+
+- Re
+  - ghidra
+  - Cutter
+- Pwn
+  - readelf
+  - objdump
+  - ROPgadget
+  - pwnlib
+  - checksec
+  - xxd
+- Web
+  - curl
+  - burpsuite
+  - zaproxy
+- Forensics
+  - wireshark/tshark
+  - tcpflow
+  - volatility: memory forensics
+  - sleuthkit: disk image forensics
+  - fcrackzip with the rockyou.txt dictionnary
+  - zsteg: command line steganographic image analyzer
+  - stegsolve: Steganographic image analyzer
+  - binwalk: analyze files, extract embeded files
+  - pdftotext
+- Crypto
+  - http://factordb.com/
+  - sage
+
