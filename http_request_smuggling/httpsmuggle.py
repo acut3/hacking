@@ -11,6 +11,9 @@ import ssl
 import urllib.parse
 
 
+TIMEOUT = 5
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('url')
@@ -44,7 +47,7 @@ def parse_url(url):
     '''
     ParsedUrl = collections.namedtuple('ParsedURL',
                                        ['scheme', 'host', 'port', 'path'])
-    if url[:7] != 'http://' and url[:8] != 'https://':
+    if not url.startswith(('http://', 'https://')):
         url = 'http://' + url
     s = urllib.parse.urlsplit(url, scheme='http', allow_fragments=False)
     scheme = s.scheme
@@ -64,8 +67,11 @@ def parse_url(url):
 def connect(target):
     '''Connect to a target as returned by parse_url()'''
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(TIMEOUT)
     if target.scheme == 'https':
-        context = ssl.create_default_context()
+        # Purpose.CLIENT_AUTH disables any verification of the server's
+        # certificate
+        context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
         s = context.wrap_socket(sock, server_hostname=target.host)
     else:
         s = sock
@@ -73,17 +79,65 @@ def connect(target):
     return s
 
 
-def is_vulnerable(target):
+def to_http(s):
+    return s.replace('\n', '\r\n').encode('ascii')
+
+
+def query(target, payload):
     s = connect(target)
-    s.sendall(f'GET {target.path} HTTP/1.1\r\n\r\n'.encode())
+    logging.debug(f'>>> {target.host}:{target.port}\n' + payload)
+    s.sendall(to_http(payload))
+    response = s.recv(4096)
+    logging.debug(f'<<< {target.host}:{target.port}\n' + response)
     s.shutdown(socket.SHUT_RDWR)
     s.close()
+
+
+def is_vulnerable(target):
+    vulnerable = False
+    url = f'{target.scheme}://{target.host}:{target.port}{target.path}'
+
+    # Check vulnerability to CL.TE attack
+    try:
+        query(target, f'''POST {target.path} HTTP/1.1
+Host: {target.host}
+Transfer-Encoding: chunked
+Content-Length: 4
+
+1
+Z
+Q''')
+    except socket.timeout:
+        logging.debug(f'CL.TE timeout on {url}')
+        vulnerable = True
+
+    # If target is vulnerable to CL.TE desync then the TE.CL check will poison
+    # the back-end socket with an 'X', potentially harming legitimate users.
+    # So just return now.
+    if vulnerable:
+        return vulnerable
+
+    # Check vulnerability to TE.CL attack
+    try:
+        query(target, f'''POST {target.path} HTTP/1.1
+Host: {target.host}
+Transfer-Encoding: chunked
+Content-Length: 6
+
+0
+
+X''')
+    except socket.timeout:
+        logging.debug(f'TE.CL timeout on {url}')
+        vulnerable = True
+
+    return vulnerable
 
 
 def main():
     args = parse_args()
     target = parse_url(args.url)
-    logging.debug(f'normalized url:'+
+    logging.debug(f'normalized url: '
                   f'{target.scheme}://{target.host}:{target.port}{target.path}')
     is_vulnerable(target)
 
