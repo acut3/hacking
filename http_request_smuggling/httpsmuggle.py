@@ -125,7 +125,7 @@ def is_vulnerable(target, te_header):
     try:
         query(target, f'POST {target.path} HTTP/1.1\r\n'
                       f'Host: {target.host}\r\n'
-                       'Transfer-Encoding: chunked\r\n'
+                      f'{te_header}\r\n'
                        'Content-Length: 6\r\n'
                        '\r\n'
                        '0\r\n'
