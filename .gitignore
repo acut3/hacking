@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Bytecode
+__pycache__/
+
+# Misc
+.gdb_history
