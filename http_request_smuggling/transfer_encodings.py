@@ -9,4 +9,8 @@ te_values = [
     ' Transfer-Encoding: chunked',
     'X: X\nTransfer-Encoding: chunked',
     'Transfer-Encoding\r\n: chunked',
+    'Transfer-Encoding: cow, chunked',
+    'Transfer-Encoding: chunked, cow',
+    'Transfer-Encoding: identity, chunked',
+    'Transfer-Encoding: chunked, identity',
 ]
