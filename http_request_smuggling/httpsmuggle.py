@@ -68,7 +68,10 @@ def parse_url(url):
 
 def connect(target):
     '''Connect to a target as returned by parse_url()'''
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ai = socket.getaddrinfo(target.host, target.port,
+                            type=socket.SOCK_STREAM,
+                            proto=socket.IPPROTO_TCP)[0]
+    sock = socket.socket(ai[0], ai[1], ai[2])
     sock.settimeout(TIMEOUT)
     if target.scheme == 'https':
         context = ssl.create_default_context()
@@ -79,7 +82,8 @@ def connect(target):
         s = context.wrap_socket(sock, server_hostname=target.host)
     else:
         s = sock
-    s.connect((target.host, target.port))
+    s.connect(ai[4])
+    logging.debug(f'Connected to {ai[4][0]} port {ai[4][1]}')
     return s
 
 
@@ -169,7 +173,7 @@ def main():
     args = parse_args()
     target = parse_url(args.url)
     url = f'{target.scheme}://{target.host}:{target.port}{target.path}'
-    logging.debug(f'normalized url: {url}')
+    logging.debug(f'Normalized url: {url}')
     for te in transfer_encodings.te_values:
         r = is_vulnerable(target, te)
         if r:
