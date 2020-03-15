@@ -40,6 +40,8 @@ Tools
   - volatility: memory forensics
   - sleuthkit: disk image forensics
   - fcrackzip with the rockyou.txt dictionnary
+  - john the ripper
+  - hashcat
   - zsteg: command line steganographic image analyzer
   - stegsolve: Steganographic image analyzer
   - binwalk: analyze files, extract embeded files
@@ -47,4 +49,3 @@ Tools
 - Crypto
   - http://factordb.com/
   - sage
-
