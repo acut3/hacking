@@ -15,7 +15,8 @@ from flask import Flask, Response, abort, request
 
 args = None
 app  = None
-alphabet = string.ascii_letters + string.digits + "{-!}"
+# Default to base64
+alphabet = string.ascii_letters + string.digits + "+/-_="
 secret = ''
 last_call = None
 
