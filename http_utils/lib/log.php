@@ -1,5 +1,5 @@
 <?php
-function log_request() {
+function log_request($email = NULL) {
     $data = '';
 
     # Client IP, HTTP user name, date
@@ -31,5 +31,10 @@ function log_request() {
 
     # Log request
     file_put_contents('/var/log/php/php.log', $data, FILE_APPEND|LOCK_EX);
+
+    # Notify be email
+    if ($email) {
+        mail($email, 'OOB hit', $data);
+    }
 }
 ?>
