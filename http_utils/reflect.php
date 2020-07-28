@@ -1,4 +1,6 @@
 <?php
+include 'lib/log.php';
+
 /* Respond with the data specified in the URL.
  *
  * The following URL parameters are accepted:
@@ -12,6 +14,11 @@
  * For example:
  * GET /reflect.php?c=301&h[Location]=/
  */
+
+// Log request
+if (isset($_GET['l'])) {
+    log_request();
+}
 // Send status code
 if (NULL !== $code = $_GET['c'] ?? NULL) {
     http_response_code($code);
@@ -34,5 +41,4 @@ if (NULL !== $headers = $_GET['h'] ?? NULL) {
 if (NULL !== $body = $_GET['b'] ?? NULL) {
     echo $body;
 }
-//var_dump($_GET);
 ?>
