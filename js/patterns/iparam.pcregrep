@@ -1,0 +1,8 @@
+(\w+\.)*location(\.\w+)*[^\w"']
+\w+\.hash[^\w"']
+\w+\.host[^\w"']
+\w+\.hostname[^\w"']
+\w+\.href[^\w"']
+\w+\.origin[^\w"']
+\w+\.pathname[^\w"']
+\w+\.search[^\w"']
