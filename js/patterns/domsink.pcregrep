@@ -14,4 +14,3 @@ innerHTML\s*=[^=]
 \.insertAfter\(
 \.insertBefore\(
 \$\((?!this|function|["'`])
-\Wlocation(\.href)?\s*=[^=]
