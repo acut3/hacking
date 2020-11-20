@@ -1,4 +1,4 @@
 #!/usr/bin/bash
 
-wget -xi -
+wget --compression=gzip -xi -
 find . -type f -exec js-beautify -r {} \;
