@@ -86,7 +86,7 @@ init
 # amass
 outfile=$FILE_AMASS
 miss $outfile &&
-    amass enum -df "../$FILE_ROOTDOMAINS" -o $outfile
+    amass enum -passive -df "../$FILE_ROOTDOMAINS" -o $outfile
 
 # subfinder
 outfile=$FILE_SUBFINDER
