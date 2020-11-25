@@ -1,5 +1,8 @@
 <?php
-function log_request($email = NULL) {
+function log_request($params = []) {
+    $file  = $params['file']  ?? 'php.log';
+    $email = $params['email'] ?? NULL;
+
     $data = '';
 
     # Client IP, HTTP user name, date
@@ -30,7 +33,8 @@ function log_request($email = NULL) {
     $data .= "\n";
 
     # Log request
-    file_put_contents('/var/log/php/php.log', $data, FILE_APPEND|LOCK_EX);
+    $file = basename($file);
+    file_put_contents("/var/log/php/$file", $data, FILE_APPEND|LOCK_EX);
 
     # Notify be email
     if ($email) {
