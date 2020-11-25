@@ -17,6 +17,7 @@ FILE_SUBDOMAINS_CNAME="subdomains_cname.txt"
 FILE_SUBDOMAINS_IPS="subdomains_ip.txt"
 FILE_MASSCAN="masscan.json"
 FILE_SUBDOMAINS_PORT="subdomains_port_*.txt"
+FILE_HTTPX="httpx.out"
 
 ################################################################################
 # Functions
@@ -36,7 +37,7 @@ miss () {
 }
 
 sorthosts () {
-    sort -u -t. -k6 -k5 -k4 -k3 -k2 -k1
+    sort -u -t. -k6,6 -k5,5 -k4,4 -k3,3 -k2,2 -k1,1
 }
 
 # Get hosts with a given IP, using the massdns json file
@@ -123,6 +124,18 @@ jq -r '.data.answers[]?|select(.type=="CNAME").name[:-1]' $FILE_MASSDNS |
 
 outfile=$FILE_MASSCAN
 miss $outfile &&
-    sudo masscan -sS -p $PORTS -iL subdomains_ip.txt -oJ $FILE_MASSCAN
+    sudo masscan -sS -p $PORTS -iL $FILE_SUBDOMAINS_IPS -oJ $FILE_MASSCAN
 
 mk_hostsbyport_files
+
+#===============================================================================
+# HTTP probing
+#-------------------------------------------------------------------------------
+
+outfile=$FILE_HTTPX
+miss $outfile &&
+    cat subdomains_port_80.txt subdomains_port_443.txt |
+    sort -u |
+    httpx -no-color -status-code -location -title |
+    sort -k2,2 -k3,3 -k4,4 > $FILE_HTTPX
+
