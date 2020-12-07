@@ -1,7 +1,14 @@
 #!/usr/bin/bash
+#
+# Download and beautify URLs passed on stdin.
+# All arguments are passed to the wget command.
+#
+# Example:
+# getjs.sh --header='Cookie: ...' < urls.txt
+#
 
 # Download files
-wget --no-check-certificate --compression=gzip -xi -
+wget "$@" --no-check-certificate --compression=gzip -x -i -
 
 # Beautify them
 find . -type f | while read f
