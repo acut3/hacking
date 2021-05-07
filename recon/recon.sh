@@ -117,7 +117,7 @@ jq -r '.data.answers[]?|select(.type=="A").data' $FILE_MASSDNS |
 
 # Subdomains with a CNAME
 jq -r '.data.answers | select(.[0]|.type == "CNAME") | [.[0].name[:-1],.[0].data[:-1],.[1:][].data] | join(" ")' $FILE_MASSDNS |
-    sort -u > $FILE_SUBDOMAINS_CNAME
+    sort -u | column -t > $FILE_SUBDOMAINS_CNAME
 
 # Subdomain with a CNAME that doesn't resolve to an IP
 jq -r '.data.answers | select(.[0]?.type == "CNAME") | select(map(select(.type == "A"))|length == 0) | [.[0].name[:-1],.[].data[:-1]] | join(" ")' $FILE_MASSDNS |
