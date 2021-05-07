@@ -4,16 +4,17 @@ CFGDIR="$HOME/.config/autorecon"
 
 ROOTDIR="AUTORECON"
 RUNDIR_PREFIX="RUN_"
+FILE_ROOTDOMAINS="rootdomains.txt"
 
 PORTS='80,81,300,443,591,593,832,981,1010,1311,2082,2087,2095,2096,2480,3000,3128,3333,4243,4567,4711,4712,4993,5000,5104,5108,5800,6543,7000,7396,7474,8000,8001,8008,8014,8042,8069,8080,8081,8088,8090,8091,8118,8123,8172,8222,8243,8280,8281,8333,8443,8500,8834,8880,8888,8983,9000,9043,9060,9080,9090,9091,9200,9443,9800,9981,12443,16080,18091,18092,20720,28017'
 
-FILE_ROOTDOMAINS="rootdomains.txt"
 FILE_AMASS="amass.out"
 FILE_SUBFINDER="subfinder.out"
 FILE_SUBDOMAINS="subdomains.txt"
 FILE_MASSDNS="massdns.json"
 FILE_SUBDOMAINS_A="subdomains_a.txt"
 FILE_SUBDOMAINS_CNAME="subdomains_cname.txt"
+FILE_SUBDOMAINS_CNAME_NOIP="subdomains_cname_noip.txt"
 FILE_SUBDOMAINS_IPS="subdomains_ip.txt"
 FILE_MASSCAN="masscan.json"
 FILE_SUBDOMAINS_PORT="subdomains_port_*.txt"
@@ -114,9 +115,13 @@ jq -r '.data.answers[]?|select(.type=="A").name[:-1]' $FILE_MASSDNS |
 jq -r '.data.answers[]?|select(.type=="A").data' $FILE_MASSDNS |
     sort -Vu > $FILE_SUBDOMAINS_IPS
 
-# Subdomains with a CNAME record
-jq -r '.data.answers[]?|select(.type=="CNAME").name[:-1]' $FILE_MASSDNS |
+# Subdomains with a CNAME
+jq -r '.data.answers | select(.[0]|.type == "CNAME") | [.[0].name[:-1],.[0].data[:-1],.[1:][].data] | join(" ")' $FILE_MASSDNS |
     sort -u > $FILE_SUBDOMAINS_CNAME
+
+# Subdomain with a CNAME that doesn't resolve to an IP
+jq -r '.data.answers | select(.[0]?.type == "CNAME") | select(map(select(.type == "A"))|length == 0) | [.[0].name[:-1],.[].data[:-1]] | join(" ")' $FILE_MASSDNS |
+    sort -u > $FILE_SUBDOMAINS_CNAME_NOIP
 
 #===============================================================================
 # Port scanning
