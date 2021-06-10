@@ -1,2 +1,2 @@
 # Hacking
-Unpolished hacking-related code and notes.
+Unpolished hacking-related code and notes (see the wiki).
