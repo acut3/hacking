@@ -6,8 +6,9 @@ ROOTDIR="AUTORECON"
 RUNDIR_PREFIX="RUN_"
 FILE_ROOTDOMAINS="rootdomains.txt"
 FILE_BLACKLIST="blacklist.txt"
+FILE_EGREP_BLACKLIST="egrep_$FILE_BLACKLIST"
 
-PORTS='80,81,300,443,591,593,832,981,1010,1311,2082,2087,2095,2096,2480,3000,3128,3333,4243,4567,4711,4712,4993,5000,5104,5108,5800,6543,7000,7396,7474,8000,8001,8008,8014,8042,8069,8080,8081,8088,8090,8091,8118,8123,8172,8222,8243,8280,8281,8333,8443,8500,8834,8880,8888,8983,9000,9043,9060,9080,9090,9091,9200,9443,9800,9981,12443,16080,18091,18092,20720,28017'
+PORTS='21,22,80,443,6379,9200,9443'
 
 FILE_AMASS="amass.out"
 FILE_SUBFINDER="subfinder.out"
@@ -86,10 +87,18 @@ init
 # Subdomain enumeration
 #-------------------------------------------------------------------------------
 
+if [[ -e ../$FILE_BLACKLIST ]]
+then
+    amass_blf="-blf ../$FILE_BLACKLIST"
+    awk '{gsub(/\./, "\\.");print "(^|\\.)"$0"$"}' ../$FILE_BLACKLIST > ../$FILE_EGREP_BLACKLIST
+else
+    amass_blf=""
+fi
+
 # amass
 outfile=$FILE_AMASS
 miss $outfile &&
-    amass enum -passive -df "../$FILE_ROOTDOMAINS" -o $outfile
+    amass enum -passive -df "../$FILE_ROOTDOMAINS" $amass_blf -o $outfile
 
 # subfinder
 outfile=$FILE_SUBFINDER
@@ -98,11 +107,11 @@ miss $outfile &&
 
 # Put everything together
 outfile=$FILE_SUBDOMAINS
-if [[ -e ../$FILE_BLACKLIST ]]
+if [[ -e ../$FILE_EGREP_BLACKLIST ]]
 then
     miss $outfile &&
         sort -u $FILE_AMASS $FILE_SUBFINDER |
-        grep -vf ../$FILE_BLACKLIST > $FILE_SUBDOMAINS
+        grep -Evf ../$FILE_EGREP_BLACKLIST > $FILE_SUBDOMAINS
 else
     miss $outfile &&
         sort -u $FILE_AMASS $FILE_SUBFINDER > $FILE_SUBDOMAINS
