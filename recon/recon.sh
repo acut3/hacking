@@ -28,10 +28,10 @@ FILE_HTTPX="httpx.out"
 
 init () {
     [[ ! -d $ROOTDIR ]] && mkdir $ROOTDIR
-    cd $ROOTDIR
-    newdir=$RUNDIR_PREFIX`date +%Y%m%d`
-    [[ ! -d $newdir ]] && mkdir $newdir
-    cd $newdir
+    cd $ROOTDIR || exit 1
+    newdir=$RUNDIR_PREFIX$(date +%Y%m%d)
+    [[ ! -d $newdir ]] && mkdir "$newdir"
+    cd "$newdir" || exit 1
 }
 
 miss () {
@@ -46,22 +46,22 @@ sorthosts () {
 # Get hosts with a given IP, using the massdns json file
 hosts4ip () {
     ip=$1
-    jq -r 'select(.data.answers[]?.data=="'$ip'").name[:-1]' $FILE_MASSDNS
+    jq -r 'select(.data.answers[]?.data=="'"$ip"'").name[:-1]' $FILE_MASSDNS
 }
 
 # Get IPs with a given port open, using the masscan json file
 ips4port () {
     port=$1
-    jq -r '.[]|select(.ports[].port=='$port').ip' $FILE_MASSCAN
+    jq -r '.[]|select(.ports[].port=='"$port"').ip' $FILE_MASSCAN
 }
 
 # Get hosts with a given port open, using the masscan and massdns json files
 hosts4port () {
     port=$1
     {
-        for ip in `ips4port $port`
+        for ip in $(ips4port "$port")
         do
-            hosts4ip $ip
+            hosts4ip "$ip"
         done
     } | sorthosts
 }
@@ -70,10 +70,10 @@ hosts4port () {
 # that have this port open
 mk_hostsbyport_files () {
     # For each port port that is open on at least one IP
-    for port in `jq '.[].ports[].port' $FILE_MASSCAN | sort -nu`
+    for port in $(jq '.[].ports[].port' $FILE_MASSCAN | sort -nu)
     do
-        out=`echo "$FILE_SUBDOMAINS_PORT" | sed "s/\*/$port/"`
-        hosts4port $port > $out
+        out=${FILE_SUBDOMAINS_PORT//\*/$port}
+        hosts4port "$port" > "$out"
     done
 }
 
@@ -98,7 +98,7 @@ fi
 # amass
 outfile=$FILE_AMASS
 miss $outfile &&
-    amass enum -passive -df "../$FILE_ROOTDOMAINS" $amass_blf -o $outfile
+    amass enum -passive -df "../$FILE_ROOTDOMAINS" "$amass_blf" -o $outfile
 
 # subfinder
 outfile=$FILE_SUBFINDER
@@ -124,7 +124,7 @@ fi
 
 outfile=$FILE_MASSDNS
 miss $outfile &&
-    massdns -r $CFGDIR/resolvers.txt -o J -w $outfile < $FILE_SUBDOMAINS
+    massdns -r "$CFGDIR/resolvers.txt" -o J -w $outfile < $FILE_SUBDOMAINS
 
 # Subdomains with an A record
 jq -r '.data.answers[]?|select(.type=="A").name[:-1]' $FILE_MASSDNS |
