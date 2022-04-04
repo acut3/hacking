@@ -97,8 +97,9 @@ fi
 
 # amass
 outfile=$FILE_AMASS
+# shellcheck disable=SC2086
 miss $outfile &&
-    amass enum -passive -df "../$FILE_ROOTDOMAINS" "$amass_blf" -o $outfile
+    amass enum -v -passive -df "../$FILE_ROOTDOMAINS" $amass_blf -o $outfile
 
 # subfinder
 outfile=$FILE_SUBFINDER
