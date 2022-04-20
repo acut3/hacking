@@ -40,7 +40,7 @@ miss () {
 }
 
 sorthosts () {
-    sort -u -t. -k6,6 -k5,5 -k4,4 -k3,3 -k2,2 -k1,1
+    sort -u -t. -k9,9 -k8,8 -k7,7 -k6,6 -k5,5 -k4,4 -k3,3 -k2,2 -k1,1 "$@"
 }
 
 # Get hosts with a given IP, using the massdns json file
@@ -111,11 +111,11 @@ outfile=$FILE_SUBDOMAINS
 if [[ -e ../$FILE_EGREP_BLACKLIST ]]
 then
     miss $outfile &&
-        sort -u $FILE_AMASS $FILE_SUBFINDER |
+        sorthosts $FILE_AMASS $FILE_SUBFINDER |
         grep -Evf ../$FILE_EGREP_BLACKLIST > $FILE_SUBDOMAINS
 else
     miss $outfile &&
-        sort -u $FILE_AMASS $FILE_SUBFINDER > $FILE_SUBDOMAINS
+        sorthosts $FILE_AMASS $FILE_SUBFINDER > $FILE_SUBDOMAINS
 fi
 
 
@@ -129,7 +129,7 @@ miss $outfile &&
 
 # Subdomains with an A record
 jq -r 'select(.status=="NOERROR").name[:-1]' $FILE_MASSDNS |
-    sort -u > $FILE_SUBDOMAINS_A
+    sorthosts > $FILE_SUBDOMAINS_A
 
 # Same, but IPs
 jq -r '.data.answers[]?|select(.type=="A").data' $FILE_MASSDNS |
