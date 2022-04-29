@@ -128,7 +128,7 @@ miss $outfile &&
     massdns -r "$CFGDIR/resolvers.txt" -o J -w $outfile < $FILE_SUBDOMAINS
 
 # Subdomains with an A record
-jq -r 'select(.status=="NOERROR").name[:-1]' $FILE_MASSDNS |
+jq -r 'select(.data.answers and ([.data.answers[]|select(.type=="A" and (.data|type=="string"))]|length)).name[:-1]' $FILE_MASSDNS |
     sorthosts > $FILE_SUBDOMAINS_A
 
 # Same, but IPs
