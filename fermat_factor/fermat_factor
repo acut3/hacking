@@ -1,0 +1,20 @@
+#!/usr/bin/env sage
+
+import sys
+from sage.all import *
+
+n = sage_eval(sys.argv[1])
+
+if (n % 2 == 0):
+  print('Number must be odd', file=sys.stderr)
+  sys.exit(1)
+
+a = isqrt(n)
+
+while True:
+  a += 1
+  b2 = a**2 - n
+  if is_square(b2):
+    b = isqrt(b2)
+    print(f'{a+b} * {a-b}')
+    break
