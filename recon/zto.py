@@ -105,11 +105,11 @@ def main():
     print('hostname -> NS records:')
     print(compact_json(massdns_ns))
 
-    ns = ns2zones(massdns_ns)
+    hosts4ns = ns2zones(massdns_ns)
     print('NS -> hostnames:')
-    print(compact_json(ns))
+    print(compact_json(hosts4ns))
 
-    massdns_a = massdns(ns.keys(), 'A')
+    massdns_a = massdns(hosts4ns.keys(), 'A')
     print('NS -> A records:')
     print(compact_json(massdns_a))
 
@@ -120,7 +120,7 @@ def main():
         print("The following NS records don't have an A record:")
         for ns in ns_noip:
             print(f'* {ns}, responsible for resolving: '
-                  + ' '.join(ns2zones[ns]))
+                  + ' '.join(hosts4ns[ns]))
 
 
 if __name__ == "__main__":
