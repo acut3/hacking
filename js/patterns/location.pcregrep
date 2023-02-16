@@ -1,3 +1,3 @@
-\Wlocation(\.href)?\s*=[^=]
-\Wlocation\.assign\(
-\Wlocation\.replace\(
+\Wlocation(\.href)?\s*=[^=][^;]*
+\Wlocation\.assign\([^;]*
+\Wlocation\.replace\([^;]*
