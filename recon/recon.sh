@@ -99,7 +99,8 @@ fi
 outfile=$FILE_AMASS
 # shellcheck disable=SC2086
 miss $outfile &&
-    amass enum -v -passive -df "../$FILE_ROOTDOMAINS" $amass_blf -o $outfile
+    # CommonCrawl is extremely slow
+    amass enum -v -passive -exclude CommonCrawl -df "../$FILE_ROOTDOMAINS" $amass_blf -o $outfile
 
 # subfinder
 outfile=$FILE_SUBFINDER
