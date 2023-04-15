@@ -1,0 +1,13 @@
+detectors:
+
+  - name: Contentful access token
+    keywords:
+      - CFPAT-
+    regex:
+      token: CFPAT-[0-9a-f]{64}
+
+  - name: Shopify Custom App access token
+    keywords:
+      - shpca_
+    regex:
+      token: shpca_[0-9a-f]{32}
