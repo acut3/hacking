@@ -14,6 +14,8 @@ FILE_AMASS="amass.out"
 FILE_SUBFINDER="subfinder.out"
 FILE_SUBDOMAINS="subdomains.txt"
 FILE_MASSDNS="massdns.json"
+FILE_REVERSE_DNS="rdns.json"
+FILE_REVERSE_PORTS="rports.json"
 FILE_SUBDOMAINS_A="subdomains_a.txt"
 FILE_SUBDOMAINS_CNAME="subdomains_cname.txt"
 FILE_SUBDOMAINS_CNAME_NOIP="subdomains_cname_noip.txt"
@@ -45,14 +47,12 @@ sorthosts() {
 
 # Get hosts with a given IP, using the massdns json file
 hosts4ip() {
-  ip=$1
-  jq -r 'select(.data.answers[]?.data=="'"$ip"'").name[:-1]' $FILE_MASSDNS
+  jq -r --arg ip "$1" '.[$ip][]' $FILE_REVERSE_DNS
 }
 
 # Get IPs with a given port open, using the masscan json file
 ips4port() {
-  port=$1
-  jq -r '.[]|select(.ports[].port=='"$port"').ip' $FILE_MASSCAN
+  jq -r --arg port "$1" '.[] | select(.ports[].port == ($port | tonumber)).ip' $FILE_MASSCAN
 }
 
 # Get hosts with a given port open, using the masscan and massdns json files
@@ -69,7 +69,7 @@ hosts4port() {
 # that have this port open
 mk_hostsbyport_files() {
   # For each port port that is open on at least one IP
-  for port in $(jq '.[].ports[].port' $FILE_MASSCAN | sort -nu); do
+  for port in $(jq -r 'keys[]' $FILE_REVERSE_PORTS | sort -nu); do
     out=${FILE_SUBDOMAINS_PORT//\*/$port}
     hosts4port "$port" >"$out"
   done
@@ -123,6 +123,9 @@ outfile=$FILE_MASSDNS
 miss $outfile &&
   massdns -r "$CFGDIR/resolvers.txt" -o J -w $outfile <$FILE_SUBDOMAINS
 
+# Generate rDNS file, mapping IPs to a list of names
+jq 'reduce (inputs | .name as $q | .data.answers[]? | select(.type == "A") + {q:$q}) as $a ({}; . + {($a.data): (.[$a.data] + [$a.q])})' $FILE_MASSDNS > $FILE_REVERSE_DNS
+
 # Subdomains with an A record
 jq -r 'select(.data.answers and ([.data.answers[] | select(.type=="A" and (.data | type=="string"))] | length > 0)).name[:-1]' $FILE_MASSDNS |
   sorthosts >$FILE_SUBDOMAINS_A
@@ -139,6 +142,7 @@ jq -r '.data.answers | select(.[0]|.type == "CNAME") | [.[0].name[:-1],.[0].data
 jq -r '.data.answers | select(.[0]?.type == "CNAME") | select(map(select(.type == "A"))|length == 0) | [.[0].name[:-1],.[].data[:-1]] | join(" ")' $FILE_MASSDNS |
   sort -u >$FILE_SUBDOMAINS_CNAME_NOIP
 
+
 #===============================================================================
 # Port scanning
 #-------------------------------------------------------------------------------
@@ -146,6 +150,9 @@ jq -r '.data.answers | select(.[0]?.type == "CNAME") | select(map(select(.type =
 outfile=$FILE_MASSCAN
 miss $outfile &&
   sudo masscan -sS -p $PORTS -iL $FILE_SUBDOMAINS_IPS -oJ $FILE_MASSCAN
+
+# Generage rPorts file, mapping ports to a list of IPs that have them open
+jq -r 'reduce (.[] | .ip as $ip | .ports[] | select(.status == "open") | {ip: $ip, port: (.port|tostring)}) as $r ({}; . + {($r.port): (.[$r.port] + [$r.ip])})' $FILE_MASSCAN > $FILE_REVERSE_PORTS
 
 mk_hostsbyport_files
 
