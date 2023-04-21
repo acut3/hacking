@@ -73,14 +73,14 @@ mk_hostsbyport_files() {
   eval "RPORTS=$(json2hash $FILE_REVERSE_PORTS)"
   eval "RDNS=$(json2hash $FILE_REVERSE_DNS)"
 
-  # For each port that is open on at least one IP
+  # For each port that we're found open somewhere
   for port in $(jq -r 'keys_unsorted[]' $FILE_REVERSE_PORTS | sort -nu); do
     out=${FILE_SUBDOMAINS_PORT//\*/$port}
-    :>"$out"
-    # For each IP with that port open
+    : > "$out"
     {
+      # For each IP with that port open
       for ip in ${RPORTS[$port]}; do
-        # Write the hostnames for this IP into the proper per-port file
+        # Write the corresponding hostnames into the proper per-port file
         echo "${RDNS[$ip]}"
       done
     } | sorthosts > "$out"
