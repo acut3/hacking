@@ -45,39 +45,61 @@ sorthosts() {
   sort -u -t. -k9,9 -k8,8 -k7,7 -k6,6 -k5,5 -k4,4 -k3,3 -k2,2 -k1,1 "$@"
 }
 
-# Get hosts with a given IP, using the massdns json file
-hosts4ip() {
-  jq -r --arg ip "$1" '.[$ip][]' $FILE_REVERSE_DNS
+# Given a json file (or stdin), prints something that can be safely eval'ed to
+# produce an associative array. The input file must be of the form:
+#
+# {
+#   "key_1": [ "val_1_1", "val_1_2" ],
+#   "key_2": [ "val_2_1" ]
+# }
+#
+# in which cas it would print:
+#
+# (
+# ['key_1']='val_1_1
+# val_1_2'
+# ['key_2']='val_2_1'
+# )
+#
+json2hash() {
+  echo '('
+  jq -r 'to_entries[] | "[" + (.key|@sh) + "]=" + (.value|join("\n")|@sh)' "$@"
+  echo ')'
 }
 
-# Get IPs with a given port open, using the masscan json file
-ips4port() {
-  jq -r --arg port "$1" '.[] | select(.ports[].port == ($port | tonumber)).ip' $FILE_MASSCAN
-}
-
-# Get hosts with a given port open, using the masscan and massdns json files
-hosts4port() {
-  port=$1
-  {
-    for ip in $(ips4port "$port"); do
-      hosts4ip "$ip"
-    done
-  } | sorthosts
-}
-
-# For each port that was found open at least once, create a file with the hosts
-# that have this port open
 mk_hostsbyport_files() {
-  # For each port port that is open on at least one IP
-  for port in $(jq -r 'keys[]' $FILE_REVERSE_PORTS | sort -nu); do
+  # Create associative arrays for fast resolutions
+  local -A RPORTS RDNS
+  eval "RPORTS=$(json2hash $FILE_REVERSE_PORTS)"
+  eval "RDNS=$(json2hash $FILE_REVERSE_DNS)"
+
+  # For each port that is open on at least one IP
+  for port in $(jq -r 'keys_unsorted[]' $FILE_REVERSE_PORTS | sort -nu); do
     out=${FILE_SUBDOMAINS_PORT//\*/$port}
-    hosts4port "$port" >"$out"
+    :>"$out"
+    # For each IP with that port open
+    {
+      for ip in ${RPORTS[$port]}; do
+        # Write the hostnames for this IP into the proper per-port file
+        echo "${RDNS[$ip]}"
+      done
+    } | sorthosts > "$out"
   done
 }
 
 ################################################################################
 # Main script
 ################################################################################
+
+# Used for testing
+if [[ "$1" = "test" ]]; then
+  rm -rf TEST
+  mkdir TEST
+  cp -- * TEST
+  cd TEST || exit 0
+  time mk_hostsbyport_files
+  exit 0
+fi
 
 init
 
