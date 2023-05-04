@@ -186,5 +186,5 @@ outfile=$FILE_HTTPX
 miss $outfile &&
   cat subdomains_port_80.txt subdomains_port_443.txt |
   sort -u |
-    httpx -no-color -status-code -location -title |
+    httpx-toolkit -no-color -status-code -location -title |
     sort -k2,2 -k3,3 -k4,4 >$FILE_HTTPX
