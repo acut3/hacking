@@ -83,7 +83,7 @@ mk_hostsbyport_files() {
         # Write the corresponding hostnames into the proper per-port file
         echo "${RDNS[$ip]}"
       done
-    } | sorthosts > "$out"
+    } | sed 's/\.$//' | sorthosts > "$out"
   done
 }
 
