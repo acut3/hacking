@@ -19,26 +19,34 @@ include 'lib/log.php';
 if (isset($_GET['l'])) {
     log_request();
 }
-// Send status code
-if (NULL !== $code = $_GET['c'] ?? NULL) {
-    http_response_code($code);
-}
-// Send headers
-if (NULL !== $headers = $_GET['h'] ?? NULL) {
-    if (is_array($headers)) {
-        foreach ($headers as $key => $val) {
-            if (is_string($key)) {
-                header("$key: $val", FALSE);
-            } elseif (is_int($key)) {
-                header($val, FALSE);
-            }
-        }
-    } else {
-        header($headers);
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    // CORS preflight
+    header('Access-Control-Allow-Origin: ' . $_SERVER['HTTP_ORIGIN']);
+    header('Access-Control-Allow-Methods: *');
+    header('Access-Control-Allow-Headers: *');
+} else {
+    // Send status code
+    if (NULL !== $code = $_GET['c'] ?? NULL) {
+        http_response_code($code);
     }
-}
-// Send body
-if (NULL !== $body = $_GET['b'] ?? NULL) {
-    echo $body;
+    // Send headers
+    if (NULL !== $headers = $_GET['h'] ?? NULL) {
+        if (is_array($headers)) {
+            foreach ($headers as $key => $val) {
+                if (is_string($key)) {
+                    header("$key: $val", FALSE);
+                } elseif (is_int($key)) {
+                    header($val, FALSE);
+                }
+            }
+        } else {
+            header($headers);
+        }
+    }
+    // Send body
+    if (NULL !== $body = $_GET['b'] ?? NULL) {
+        echo $body;
+    }
 }
 ?>
