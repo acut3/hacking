@@ -13,19 +13,18 @@ function log_request($params = []) {
     $data .= "$_SERVER[REMOTE_ADDR] - $user " . date('[d/M/Y:H:i:s O]') . "\n";
 
     # Query
-    $data .= "| $_SERVER[REQUEST_METHOD] $_SERVER[REQUEST_URI] $_SERVER[SERVER_PROTOCOL]\n";
+    $data .= "$_SERVER[REQUEST_METHOD] $_SERVER[REQUEST_URI] $_SERVER[SERVER_PROTOCOL]\n";
 
     # Headers
     foreach (apache_request_headers() as $k => $v) {
-            $data .= "| $k: $v\n";
+            $data .= "$k: $v\n";
     }
-    $data .= "| \n";
+    $data .= "\n";
 
     # Body
     $body = file_get_contents('php://input');
     if (strlen($body) > 0) {
-        $data .= "| ";
-        $data .= str_replace("\n", "\n| ", $body);
+        $data .= $body;
         $data .= "\n";
     }
 
